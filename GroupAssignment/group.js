@@ -51,7 +51,7 @@ export class Group extends Scene {
 
         // The parameters of the Light are: position, color, size
         const light_position = vec4(10, 4, 7, 1);
-        const light_radius = 4 + 3 * Math.sin(2 * Math.PI * (1 / 100) * t);
+        const light_radius = 5;
 
         let light_color = color(1, 1, 1, 1);
         if (Math.floor(ts) % 2 == 1) {
