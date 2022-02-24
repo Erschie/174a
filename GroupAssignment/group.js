@@ -4,12 +4,10 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
-export class Assignment3 extends Scene {
+export class Group extends Scene {
     constructor() {
-        // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
-        // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
             torus: new defs.Torus(15, 15),
             sphere: new defs.Subdivision_Sphere(4),
@@ -17,11 +15,8 @@ export class Assignment3 extends Scene {
             sphere3: new defs.Subdivision_Sphere(3),
             moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
             circle: new defs.Regular_2D_Polygon(1, 15),
-            // TODO:  Fill in as many additional shape instances as needed in this key/value table.
-            //        (Requirement 1)
         };
 
-        // *** Materials
         this.materials = {
             sun: new Material(new defs.Phong_Shader(),
                 {ambient: 1, color: hex_color("#ffffff")}),
@@ -37,15 +32,12 @@ export class Assignment3 extends Scene {
                 {ambient: 0, specularity: 0.9, color: hex_color("#19a9f5")}),
             ring: new Material(new Ring_Shader(),
                 {ambient: 1, diffusivity: 0, specularity: 0, color: hex_color("#b08040")}),
-            // TODO:  Fill in as many additional material objects as needed in this key/value table.
-            //        (Requirement 4)
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
     }
 
     make_control_panel() {
-        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
         this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
         this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
