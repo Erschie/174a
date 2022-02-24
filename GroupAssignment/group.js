@@ -10,6 +10,7 @@ export class Group extends Scene {
 
         this.shapes = {
             head: new defs.Subdivision_Sphere(5),
+            rock: new defs.Subdivision_Sphere(1),
 
             sphere2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             sphere3: new defs.Subdivision_Sphere(3),
@@ -18,16 +19,8 @@ export class Group extends Scene {
         };
 
         this.materials = {
-            sun: new Material(new defs.Phong_Shader(),
-                {ambient: 1, color: hex_color("#ffffff")}),
-            planet1: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 1, specularity: 0, color: hex_color("#6b6b6b")}),
-            planet2_g: new Material(new Gouraud_Shader(),
-                {ambient: 0, diffusivity: 0.2, specularity: 1, color: hex_color("#80ffff")}),
-            planet2_p: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 0.2, specularity: 1, color: hex_color("#80ffff")}),
-            planet3: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 1, specularity: 1, color: hex_color("#b08040")}),
+            rock: new Material(new defs.Phong_Shader(),
+                {ambient: .4, specularity: 0.9, color: hex_color("#6c6c6c")}),
             skin: new Material(new defs.Phong_Shader(),
                 {ambient: .15, specularity: 0.9, color: hex_color("#ecbcd1")}),
             ring: new Material(new Ring_Shader(),
@@ -54,6 +47,7 @@ export class Group extends Scene {
 
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         const ts = program_state.animation_time / 100;
+        const tss = program_state.animation_time / 10;
 
         // The parameters of the Light are: position, color, size
         const light_position = vec4(10, 4, 7, 1);
@@ -77,6 +71,27 @@ export class Group extends Scene {
 
         let model_transform_body2 = model_transform.times(Mat4.rotation(0.5, 0, 1, 0)).times(Mat4.scale(5.5, 4, 3)).times(Mat4.translation(0, -2, 0));
         this.shapes.head.draw(context, program_state, model_transform_body2, this.materials.skin);
+
+        //rocks
+        let x_temp = 20 - (Math.floor(tss / 1.2) % 40);
+        let model_transform_rock1 = model_transform.times(Mat4.translation(x_temp, 0, 10));
+        this.shapes.rock.draw(context, program_state, model_transform_rock1, this.materials.rock);
+
+        x_temp = 20 - (Math.floor(tss) % 40);
+        let model_transform_rock2 = model_transform.times(Mat4.translation(x_temp, 2.5, 8));
+        this.shapes.rock.draw(context, program_state, model_transform_rock2, this.materials.rock);
+
+        x_temp = 20 - (Math.floor(tss / 1.4) % 40);
+        let model_transform_rock3 = model_transform.times(Mat4.translation(x_temp, 7, -6));
+        this.shapes.rock.draw(context, program_state, model_transform_rock3, this.materials.rock);
+
+        x_temp = 20 - (Math.floor(tss / 1.3) % 40);
+        let model_transform_rock4 = model_transform.times(Mat4.translation(x_temp, -4, -12));
+        this.shapes.rock.draw(context, program_state, model_transform_rock4, this.materials.rock);
+
+        x_temp = 20 - (Math.floor(tss / 1.5) % 40);
+        let model_transform_rock5 = model_transform.times(Mat4.translation(x_temp, 7.5, -8));
+        this.shapes.rock.draw(context, program_state, model_transform_rock5, this.materials.rock);
 
         // set up camera
         if (this.attached) {
