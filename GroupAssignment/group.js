@@ -58,6 +58,12 @@ export class Group extends Scene {
         const light_position = vec4(10, 4, 7, 1);
         const light_radius = 5;
 
+        // TODO: Add the background environment
+        // TODO: Add cape animation
+        // TODO: Change the light source
+        // TODO: shadows?
+
+
         let light_color = color(1, 1, 1, 1);
         if (Math.floor(ts) % 2 == 1) {
             light_color = color(.8, .76, .89, 1);
