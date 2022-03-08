@@ -95,6 +95,7 @@ export class Simulation extends Scene {
     constructor() {
         super();
         Object.assign(this, {time_accumulator: 0, time_scale: 1, t: 0, dt: 1 / 20, bodies: [], steps_taken: 0});
+        this.light = 0;
     }
 
     simulate(frame_time) {
@@ -142,6 +143,11 @@ export class Simulation extends Scene {
         this.live_string(box => {
             box.textContent = this.steps_taken + " timesteps were taken so far."
         });
+        this.new_line();
+
+        this.key_triggered_button("Change Light Color", ["l"], () => {
+            this.light^=1
+        });
     }
 
     display(context, program_state) {
@@ -179,7 +185,10 @@ export class Group extends Simulation {
             sphere3: new defs.Subdivision_Sphere(3),
             moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
             circle: new defs.Regular_2D_Polygon(1, 15),
-            opm: new Shape_From_File("assets/saitama-ok-memechallenge/source/Saitama_OK_Cel_shaded/Saitama_OK_Cel_shaded.obj")
+            opm: new Shape_From_File("assets/saitama-ok-memechallenge/source/Saitama_OK_Cel_shaded/Saitama_OK_Cel_shaded.obj"),
+            platform: new defs.Cube(),
+            pillar: new defs.Cylindrical_Tube(10,10,[[0,1],[0,1]]),
+
         };
 
         this.materials = {
@@ -199,6 +208,10 @@ export class Group extends Simulation {
                     texture: new Texture("assets/saitama-ok-memechallenge/textures/Saitama_OK_diffuse.png", "NEAREST")}),
             sun: new Material(new defs.Phong_Shader(),
                 {ambient:1, color: hex_color("#ffffff")}),
+            background_objects: new Material(new defs.Phong_Shader(),
+                {ambient:0.2, diffusivity: 0.5, specularity:0.5, color: hex_color("#ffffff")}),
+
+
         }
         this.colliders = [
             {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
@@ -294,19 +307,30 @@ export class Group extends Simulation {
 
         // The parameters of the Light are: position, color, size
         const light_position = vec4(36, 21, 0, 1);
+
         //const light_radius = 5;
         const sun_radius = 5;
         const light_size = 10**sun_radius;
 
         // TODO: Add the background environment
-        // TODO: Add cape animation
-        // TODO: Change the light source
         // TODO: shadows?
 
+        // Added the ability to change the sun's color to two different colors: yellow and purple
 
+        //this is the color purple
         let sun_color = color(0.917, 0.792, 0.949, 1);
         if (Math.floor(ts) % 2 === 0) {
             sun_color = color(0.882, 0.666, 0.933,1);
+        }
+
+        //this is the color yellow
+        if (this.light == 1)
+        {
+            sun_color = color(1, 1, 0.1, 1);
+            if (Math.floor(ts) % 2 === 0)
+            {
+                sun_color = color(0.965, 0.874, 0.084, 1);
+            }
         }
 
         //program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
@@ -319,6 +343,18 @@ export class Group extends Simulation {
         let sun_transform = sun_tr.times(sun_sc).times(model_transform);
         this.opm.shape.draw(context, program_state, this.opm.drawn_location, this.materials.opm);
         this.shapes.sphere.draw(context, program_state, sun_transform, this.materials.sun.override({color: sun_color}));
+
+        // This section adds the background environment
+        // The background consists of a cylinder and a floor
+        // That is literally it.
+
+        //This part adds a floor
+        let model_transform_floor = model_transform.times(Mat4.scale(40, 1,30)).times(Mat4.translation(0,-18,0));
+        this.shapes.platform.draw(context, program_state, model_transform_floor, this.materials.background_objects);
+
+        //This part adds the cylinder background
+        let model_transform_cylinder = model_transform.times(Mat4.translation(-21,10,-20)).times(Mat4.scale(10, 60, 10)).times(Mat4.rotation(55, 1,0,0));
+        this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.materials.background_objects);
 
         /*
         // head
