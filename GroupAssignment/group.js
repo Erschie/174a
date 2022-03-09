@@ -79,7 +79,7 @@ export class Body {
             return false;
         // Nothing collides with itself.
         // Convert sphere b to the frame where a is a unit sphere:
-        const T = this.inverse.times(b.drawn_location, this.temp_matrix);
+        const T = this.inverse.times(b.drawn_location.times(Mat4.scale(0.8,1.5,0.8)), this.temp_matrix);
 
         const {intersect_test, points, leeway} = collider;
         // For each vertex in that b, shift to the coordinate frame of
@@ -280,11 +280,11 @@ export class Group extends Simulation {
         }
         this.colliders = [
             {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(4), leeway: .3},
+            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(4), leeway: 0.3},
             {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: .1}
         ];
         this.collider_selection = 1;
-        let opm_scale = Mat4.scale(7,7,7);
+        let opm_scale = Mat4.scale(15,15,15);
         let opm_rot = Mat4.rotation(0.5, 0,1,0);
         this.opm = new Body(this.shapes.opm, this.materials.opm, vec3(5,5,5))
             .emplace(opm_scale.times(opm_rot).times(Mat4.identity()),
@@ -293,6 +293,7 @@ export class Group extends Simulation {
         this.r = 0.917;
         this.g = 0.792;
         this.b = 0.949;
+        this.counter = 0;
     }
 
     random_shape(shape_list = this.meteorites) {
@@ -313,11 +314,12 @@ export class Group extends Simulation {
         // update_state():  Override the base time-stepping code to say what this particular
         // scene should do to its bodies every frame -- including applying forces.
         // Generate additional moving bodies if there ever aren't enough:
-        /*while (this.bodies.length < 35)*/
-        this.bodies.push(new Body(this.random_shape(), this.materials.rock, vec3(1, 1 + Math.random(), 1))
-            .emplace(Mat4.translation(...vec3(50, 15, 0).randomized(10)),
-                vec3(0, -1, 0).randomized(2).normalized().times(2), Math.random()));
-
+        this.counter++;
+        if (Math.floor(this.counter % 8) === 0) {
+            this.bodies.push(new Body(this.random_shape(), this.materials.rock, vec3(1, 1 + Math.random(), 1))
+                .emplace(Mat4.translation(...vec3(50, 25, 0).randomized(12)),
+                    vec3(0, -1, 0).randomized(2).normalized().times(2), Math.random()));
+        }
         const collider = this.colliders[this.collider_selection];
 
         for (let a of this.bodies) {
@@ -337,8 +339,13 @@ export class Group extends Simulation {
             // If we get here, we collided, so turn red and zero out the
             // velocity so they don't inter-penetrate any further.
             //a.material = this.active_color;
-            a.linear_velocity[0] *= -.45;
-            a.linear_velocity[2] = (Math.random() + 0.5) * 4;
+            if (a.center[2] < 0) {
+                a.linear_velocity[0] *= -.45;
+                a.linear_velocity[2] = (Math.random() + 0.5) * -2.5;
+            } else {
+                a.linear_velocity[0] *= -.45;
+                a.linear_velocity[2] = (Math.random() + 0.5) * 2.5;
+            }
             //a.angular_velocity = 0;
         }
 
@@ -351,7 +358,7 @@ export class Group extends Simulation {
         }*/
         // Delete bodies that stop or stray too far away:
         //this.bodies = this.bodies.filter(b => b.center.norm() < 50 && b.linear_velocity.norm() > 2);
-        this.bodies = this.bodies.filter(b => b.center.norm() < 50);
+        this.bodies = this.bodies.filter(b => b.center[0] > -50);
     }
 
     make_control_panel() {
@@ -372,7 +379,7 @@ export class Group extends Simulation {
         super.display(context, program_state);
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-            program_state.set_camera(Mat4.translation(0, 0, -50));
+            program_state.set_camera(Mat4.translation(0, -15, -40));
         }
 
         program_state.projection_transform = Mat4.perspective(
@@ -401,19 +408,6 @@ export class Group extends Simulation {
             sun_color = color(this.r+0.1, this.g+0.1, this.b+0.1, 1);
         }
 
-        //this is the color yellow
-        /*if (this.light == 1)
-        {
-            sun_color = color(Math.random(), Math.random(), Math.random())
-            //sun_color = color(1, 1, 0.1, 1);
-            if (Math.floor(ts) % 2 === 0)
-            {
-                sun_color = sun_color + vec3(0.05, 0.05, 0.05);
-            }
-            else {
-                sun_color = sun_color - vec3(0.05, 0.05, 0.05);
-            }
-        }*/
 
         //program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
 
