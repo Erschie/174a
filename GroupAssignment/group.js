@@ -269,7 +269,7 @@ export class Group extends Simulation {
                 {ambient: .15, specularity: 0.9, color: hex_color("#ffffff")}),
             opm: new Material(new Textured_Phong(),
                 {   color: hex_color("#000000"),
-                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
+                    ambient: 0.7, diffusivity: 0.1, specularity: 1.0,
                     texture: new Texture("assets/saitama-ok-memechallenge/textures/Saitama_OK_diffuse.png", "NEAREST")}),
             sun: new Material(new defs.Phong_Shader(),
                 {ambient:1, color: hex_color("#ffffff")}),
