@@ -148,6 +148,30 @@ export class Simulation extends Scene {
         });
         this.new_line();
 
+        this.key_triggered_button("Change Light Color", ["l"], () =>{
+            this.r = Math.random();
+            this.g = Math.random();
+            this.b = Math.random();
+        });
+        this.new_line();
+        this.key_triggered_button("Original Light Color", ['o'], () => {
+            this.r = 0.917;
+            this.g = 0.792;
+            this.b = 0.949;
+        })
+
+        this.key_triggered_button("Change Light Position", ["a"], () =>{
+            this.x = ((Math.random() * 100) % 60) - 20;
+            this.y = ((Math.random() * 100) % 40) - 10;
+            this.z = ((Math.random() * 100) % 3) + 2;
+        });
+        this.new_line();
+        this.key_triggered_button("Original Light Position", ['b'], () => {
+            this.x = 36;
+            this.y = 21;
+            this.z = 0;
+        })
+
     }
 
     texture_buffer_init(gl) {
@@ -269,7 +293,7 @@ export class Group extends Simulation {
                 {ambient: .15, specularity: 0.9, color: hex_color("#ffffff")}),
             opm: new Material(new Textured_Phong(),
                 {   color: hex_color("#000000"),
-                    ambient: 0.7, diffusivity: 0.1, specularity: 1.0,
+                    ambient: 0.7, diffusivity: 0.1, specularity: 0.7,
                     texture: new Texture("assets/saitama-ok-memechallenge/textures/Saitama_OK_diffuse.png", "NEAREST")}),
             sun: new Material(new defs.Phong_Shader(),
                 {ambient:1, color: hex_color("#ffffff")}),
@@ -306,6 +330,9 @@ export class Group extends Simulation {
         this.r = 0.917;
         this.g = 0.792;
         this.b = 0.949;
+        this.x = 36;
+        this.y = 21;
+        this.z = 0;
         this.counter = 0;
     }
 
@@ -374,20 +401,6 @@ export class Group extends Simulation {
         this.bodies = this.bodies.filter(b => b.center[0] > -50);
     }
 
-    make_control_panel() {
-        this.key_triggered_button("Change Light Color", ["l"], () =>{
-            this.r = Math.random();
-            this.g = Math.random();
-            this.b = Math.random();
-        });
-        this.new_line();
-        this.key_triggered_button("Original Light Color", ['o'], () => {
-            this.r = 0.917;
-            this.g = 0.792;
-            this.b = 0.949;
-        })
-    }
-
     display(context, program_state) {
         super.display(context, program_state);
         const gl = context.context;
@@ -406,7 +419,7 @@ export class Group extends Simulation {
         const tss = program_state.animation_time / 10;
 
         // The parameters of the Light are: position, color, size
-        const light_position = vec4(36, 21, 0, 1);
+        const light_position = vec4(this.x, this.y, this.z, 1);
 
         //const light_radius = 5;
         const sun_radius = 5;
@@ -429,23 +442,19 @@ export class Group extends Simulation {
         program_state.lights = [new Light(light_position, sun_color, light_size)];
 
         let model_transform = Mat4.identity();
-        let sun_tr = Mat4.translation(36,21,0);
-        let sun_sc = Mat4.scale(sun_radius, sun_radius, sun_radius);
-        let sun_transform = sun_tr.times(sun_sc).times(model_transform);
         this.opm.shape.draw(context, program_state, this.opm.drawn_location, this.materials.opm);
-        this.shapes.sphere.draw(context, program_state, sun_transform, this.materials.sun.override({color: sun_color}));
 
         // This section adds the background environment
         // The background consists of a cylinder and a floor
         // That is literally it.
 
         //This part adds a floor
-        let model_transform_floor = model_transform.times(Mat4.scale(40, 1,30)).times(Mat4.translation(0,-18,0));
+        let model_transform_floor = model_transform.times(Mat4.scale(40, 1,30)).times(Mat4.translation(0,-38,0));
         this.shapes.platform.draw(context, program_state, model_transform_floor, this.materials.background_objects);
 
 
         //This part adds the cylinder background
-        let model_transform_cylinder = model_transform.times(Mat4.translation(-21,10,-20)).times(Mat4.scale(10, 60, 10)).times(Mat4.rotation(55, 1,0,0));
+        let model_transform_cylinder = model_transform.times(Mat4.translation(-21,10,-20)).times(Mat4.scale(10, 100, 10)).times(Mat4.rotation(55, 1,0,0));
         this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.materials.background_objects);
         //this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.floor);
 
