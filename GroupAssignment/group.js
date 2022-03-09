@@ -145,9 +145,6 @@ export class Simulation extends Scene {
         });
         this.new_line();
 
-        this.key_triggered_button("Change Light Color", ["l"], () => {
-            this.light^=1
-        });
     }
 
     display(context, program_state) {
@@ -225,6 +222,9 @@ export class Group extends Simulation {
             .emplace(opm_scale.times(opm_rot).times(Mat4.identity()),
                 0, 0);
         this.initial_camera_location = Mat4.look_at(vec3(0, 0, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.r = 0.917;
+        this.g = 0.792;
+        this.b = 0.949;
     }
 
     random_shape(shape_list = this.meteorites) {
@@ -285,11 +285,19 @@ export class Group extends Simulation {
         this.bodies = this.bodies.filter(b => b.center.norm() < 50 && b.linear_velocity.norm() > 2);
     }
 
-    /*make_control_panel() {
-        this.key_triggered_button("View entire", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
+    make_control_panel() {
+        this.key_triggered_button("Change Light Color", ["l"], () =>{
+            this.r = Math.random();
+            this.g = Math.random();
+            this.b = Math.random();
+        });
         this.new_line();
-        this.key_triggered_button("Attach to head", ["Control", "4"], () => this.attached = () => this.head);
-       }*/
+        this.key_triggered_button("Original Light Color", ['o'], () => {
+            this.r = 0.917;
+            this.g = 0.792;
+            this.b = 0.949;
+        })
+    }
 
     display(context, program_state) {
         super.display(context, program_state);
@@ -318,20 +326,25 @@ export class Group extends Simulation {
         // Added the ability to change the sun's color to two different colors: yellow and purple
 
         //this is the color purple
-        let sun_color = color(0.917, 0.792, 0.949, 1);
+        let sun_color = color(this.r, this.g, this.b, 1);
         if (Math.floor(ts) % 2 === 0) {
-            sun_color = color(0.882, 0.666, 0.933,1);
+            //sun_color = color(0.882, 0.666, 0.933,1);
+            sun_color = color(this.r+0.1, this.g+0.1, this.b+0.1, 1);
         }
 
         //this is the color yellow
-        if (this.light == 1)
+        /*if (this.light == 1)
         {
-            sun_color = color(1, 1, 0.1, 1);
+            sun_color = color(Math.random(), Math.random(), Math.random())
+            //sun_color = color(1, 1, 0.1, 1);
             if (Math.floor(ts) % 2 === 0)
             {
-                sun_color = color(0.965, 0.874, 0.084, 1);
+                sun_color = sun_color + vec3(0.05, 0.05, 0.05);
             }
-        }
+            else {
+                sun_color = sun_color - vec3(0.05, 0.05, 0.05);
+            }
+        }*/
 
         //program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
 
@@ -355,53 +368,6 @@ export class Group extends Simulation {
         //This part adds the cylinder background
         let model_transform_cylinder = model_transform.times(Mat4.translation(-21,10,-20)).times(Mat4.scale(10, 60, 10)).times(Mat4.rotation(55, 1,0,0));
         this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.materials.background_objects);
-
-        /*
-        // head
-        let model_transform_head = model_transform.times(Mat4.scale(3, 3.5, 3));
-        this.head = model_transform_head;
-        this.shapes.head.draw(context, program_state, model_transform_head, this.materials.skin);
-
-        // eyes
-        let model_transform_eye_1 = model_transform.times(Mat4.scale(1,0.75,1))
-            .times(Mat4.translation(1,0.5,2));
-        this.shapes.head.draw(context, program_state, model_transform_eye_1, this.materials.eye);
-
-        let model_transform_eye_2 = model_transform_eye_1.times(Mat4.translation(1,0,-1));
-        this.shapes.head.draw(context, program_state, model_transform_eye_2, this.materials.eye);
-
-        //mouth
-        let model_transform_mouth = model_transform.times(Mat4.scale(1,0.1,1))
-            .times(Mat4.translation(1.5,-10,1.5));
-        this.shapes.cube.draw(context, program_state, model_transform_mouth, this.materials.eye);
-
-        // body
-        let model_transform_body1 = model_transform.times(Mat4.scale(1.5, 5, 1.5)).times(Mat4.translation(0, -1, 0));
-        this.shapes.head.draw(context, program_state, model_transform_body1, this.materials.skin);
-
-        let model_transform_body2 = model_transform.times(Mat4.rotation(0.5, 0, 1, 0)).times(Mat4.scale(5.5, 4, 3)).times(Mat4.translation(0, -2, 0));
-        this.shapes.head.draw(context, program_state, model_transform_body2, this.materials.body_suit);
-        */
-        //rocks
-        /*let x_temp = 20 - (Math.floor(tss / 1.2) % 40);
-        let model_transform_rock1 = model_transform.times(Mat4.translation(x_temp, 0, 10));
-        this.shapes.rock.draw(context, program_state, model_transform_rock1, this.materials.rock);
-
-        x_temp = 20 - (Math.floor(tss) % 40);
-        let model_transform_rock2 = model_transform.times(Mat4.translation(x_temp, 2.5, 8));
-        this.shapes.rock.draw(context, program_state, model_transform_rock2, this.materials.rock);
-
-        x_temp = 20 - (Math.floor(tss / 1.4) % 40);
-        let model_transform_rock3 = model_transform.times(Mat4.translation(x_temp, 7, -6));
-        this.shapes.cube.draw(context, program_state, model_transform_rock3, this.materials.rock);
-
-        x_temp = 20 - (Math.floor(tss / 1.3) % 40);
-        let model_transform_rock4 = model_transform.times(Mat4.translation(x_temp, -4, -12));
-        this.shapes.rock.draw(context, program_state, model_transform_rock4, this.materials.rock);
-
-        x_temp = 20 - (Math.floor(tss / 1.5) % 40);
-        let model_transform_rock5 = model_transform.times(Mat4.translation(x_temp, 7.5, -8));
-        this.shapes.cube.draw(context, program_state, model_transform_rock5, this.materials.rock);*/
 
         // set up camera
         if (this.attached) {
