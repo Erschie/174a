@@ -153,6 +153,72 @@ export class Simulation extends Scene {
         });
     }
 
+    texture_buffer_init(gl) {
+        // Depth Texture
+        this.lightDepthTexture = gl.createTexture();
+        // Bind it to TinyGraphics
+        this.light_depth_texture = new Buffered_Texture(this.lightDepthTexture);
+        this.stars.light_depth_texture = this.light_depth_texture
+        this.floor.light_depth_texture = this.light_depth_texture
+
+        this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
+        gl.bindTexture(gl.TEXTURE_2D, this.lightDepthTexture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,      // target
+            0,                  // mip level
+            gl.DEPTH_COMPONENT, // internal format
+            this.lightDepthTextureSize,   // width
+            this.lightDepthTextureSize,   // height
+            0,                  // border
+            gl.DEPTH_COMPONENT, // format
+            gl.UNSIGNED_INT,    // type
+            null);              // data
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        // Depth Texture Buffer
+        this.lightDepthFramebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,       // target
+            gl.DEPTH_ATTACHMENT,  // attachment point
+            gl.TEXTURE_2D,        // texture target
+            this.lightDepthTexture,         // texture
+            0);                   // mip level
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        // create a color texture of the same size as the depth texture
+        // see article why this is needed_
+        this.unusedTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.unusedTexture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            this.lightDepthTextureSize,
+            this.lightDepthTextureSize,
+            0,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            null,
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        // attach it to the framebuffer
+        gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,        // target
+            gl.COLOR_ATTACHMENT0,  // attachment point
+            gl.TEXTURE_2D,         // texture target
+            this.unusedTexture,         // texture
+            0);                    // mip level
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+
     display(context, program_state) {
         // display(): advance the time and state of our whole simulation.
         if (program_state.animate)
@@ -214,11 +280,6 @@ export class Group extends Simulation {
             background_objects: new Material(new defs.Phong_Shader(),
                 {ambient:0.2, diffusivity: 0.5, specularity:0.5, color: hex_color("#ffffff")}),
 
-            temp_shadow: new Material(new Shadow_Textured_Phong_Shader(1), {
-                color: color(1, 1, 1, 1), ambient: .3, diffusivity: 0.6, specularity: 0.4, smoothness: 64,
-                color_texture: null,
-                light_depth_texture: null
-            }),
         }
         this.colliders = [
             {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
@@ -298,88 +359,11 @@ export class Group extends Simulation {
         this.key_triggered_button("Attach to head", ["Control", "4"], () => this.attached = () => this.head);
        }*/
 
-    texture_buffer_init(gl) {
-        // Depth Texture
-        this.lightDepthTexture = gl.createTexture();
-        // Bind it to TinyGraphics
-        this.light_depth_texture = new Buffered_Texture(this.lightDepthTexture);
-        this.stars.light_depth_texture = this.light_depth_texture
-        this.floor.light_depth_texture = this.light_depth_texture
-
-        this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
-        gl.bindTexture(gl.TEXTURE_2D, this.lightDepthTexture);
-        gl.texImage2D(
-            gl.TEXTURE_2D,      // target
-            0,                  // mip level
-            gl.DEPTH_COMPONENT, // internal format
-            this.lightDepthTextureSize,   // width
-            this.lightDepthTextureSize,   // height
-            0,                  // border
-            gl.DEPTH_COMPONENT, // format
-            gl.UNSIGNED_INT,    // type
-            null);              // data
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-        // Depth Texture Buffer
-        this.lightDepthFramebuffer = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
-        gl.framebufferTexture2D(
-            gl.FRAMEBUFFER,       // target
-            gl.DEPTH_ATTACHMENT,  // attachment point
-            gl.TEXTURE_2D,        // texture target
-            this.lightDepthTexture,         // texture
-            0);                   // mip level
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        // create a color texture of the same size as the depth texture
-        // see article why this is needed_
-        this.unusedTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.unusedTexture);
-        gl.texImage2D(
-            gl.TEXTURE_2D,
-            0,
-            gl.RGBA,
-            this.lightDepthTextureSize,
-            this.lightDepthTextureSize,
-            0,
-            gl.RGBA,
-            gl.UNSIGNED_BYTE,
-            null,
-        );
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        // attach it to the framebuffer
-        gl.framebufferTexture2D(
-            gl.FRAMEBUFFER,        // target
-            gl.COLOR_ATTACHMENT0,  // attachment point
-            gl.TEXTURE_2D,         // texture target
-            this.unusedTexture,         // texture
-            0);                    // mip level
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    }
-
     display(context, program_state) {
         super.display(context, program_state);
-        const gl = context.context;
-
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             program_state.set_camera(Mat4.translation(0, 0, -50));
-        }
-
-        if (!this.init_ok) {
-            const ext = gl.getExtension('WEBGL_depth_texture');
-            if (!ext) {
-                return alert('need WEBGL_depth_texture');  // eslint-disable-line
-            }
-            this.texture_buffer_init(gl);
-
-            this.init_ok = true;
         }
 
         program_state.projection_transform = Mat4.perspective(
@@ -438,11 +422,9 @@ export class Group extends Simulation {
 
         //This part adds the cylinder background
         let model_transform_cylinder = model_transform.times(Mat4.translation(-21,10,-20)).times(Mat4.scale(10, 60, 10)).times(Mat4.rotation(55, 1,0,0));
-        this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.materials.temp_shadow);
+        this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.materials.background_objects);
 
         // This section adds in the shadows
-
-        //location of the light Mat4.translation(36, 21, 0)
 
 
         /*
