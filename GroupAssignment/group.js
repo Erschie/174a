@@ -155,7 +155,7 @@ export class Simulation extends Scene {
         this.lightDepthTexture = gl.createTexture();
         // Bind it to TinyGraphics
         this.light_depth_texture = new Buffered_Texture(this.lightDepthTexture);
-        this.stars.light_depth_texture = this.light_depth_texture
+        //this.stars.light_depth_texture = this.light_depth_texture
         this.floor.light_depth_texture = this.light_depth_texture
 
         this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
@@ -215,7 +215,6 @@ export class Simulation extends Scene {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 
-
     display(context, program_state) {
         // display(): advance the time and state of our whole simulation.
         if (program_state.animate)
@@ -270,14 +269,28 @@ export class Group extends Simulation {
                 {ambient: .15, specularity: 0.9, color: hex_color("#ffffff")}),
             opm: new Material(new Textured_Phong(),
                 {   color: hex_color("#000000"),
-                    ambient: 1.0, diffusivity: 0.1, specularity: 0.1,
+                    ambient: 1, diffusivity: 0.1, specularity: 0.1,
                     texture: new Texture("assets/saitama-ok-memechallenge/textures/Saitama_OK_diffuse.png", "NEAREST")}),
             sun: new Material(new defs.Phong_Shader(),
                 {ambient:1, color: hex_color("#ffffff")}),
             background_objects: new Material(new defs.Phong_Shader(),
                 {ambient:0.2, diffusivity: 0.5, specularity:0.5, color: hex_color("#ffffff")}),
+            shadow_temp: new Material(new Shadow_Textured_Phong_Shader(1), {
+                color: color(1,1,1,1),
+                ambient: 0.4,
+                diffusivity: 0.4,
+                specularity: 0.4,
+            })
 
         }
+
+        // For the floor or other plain objects
+        this.floor = new Material(new Shadow_Textured_Phong_Shader(1), {
+            color: color(1, 1, 1, 1), ambient: .3, diffusivity: 0.6, specularity: 0.4, smoothness: 64,
+            color_texture: 0.8,
+            light_depth_texture: 0.8,
+        })
+
         this.colliders = [
             {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
             {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(4), leeway: 0.3},
@@ -377,6 +390,9 @@ export class Group extends Simulation {
 
     display(context, program_state) {
         super.display(context, program_state);
+        const gl = context.context;
+        this.texture_buffer_init(gl);
+
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             program_state.set_camera(Mat4.translation(0, -15, -40));
@@ -396,7 +412,6 @@ export class Group extends Simulation {
         const sun_radius = 5;
         const light_size = 10**sun_radius;
 
-        // TODO: Add the background environment
         // TODO: shadows?
 
         // Added the ability to change the sun's color to two different colors: yellow and purple
@@ -428,11 +443,23 @@ export class Group extends Simulation {
         let model_transform_floor = model_transform.times(Mat4.scale(40, 1,30)).times(Mat4.translation(0,-18,0));
         this.shapes.platform.draw(context, program_state, model_transform_floor, this.materials.background_objects);
 
+
         //This part adds the cylinder background
         let model_transform_cylinder = model_transform.times(Mat4.translation(-21,10,-20)).times(Mat4.scale(10, 60, 10)).times(Mat4.rotation(55, 1,0,0));
         this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.materials.background_objects);
+        //this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.floor);
 
         // This section adds in the shadows
+
+        // Step 1: set the perspective and camera to the POV of light
+
+        // Bind the Depth Texture Buffer
+
+        // Prepare uniforms
+
+        // Step 2: unbind, draw to the canvas
+
+        // Step 3: display the textures
 
 
         // set up camera
