@@ -133,8 +133,8 @@ export class Simulation extends Scene {
 
     make_control_panel() {
         // make_control_panel(): Create the buttons for interacting with simulation time.
-        this.key_triggered_button("Speed up time", ["Shift", "T"], () => this.time_scale *= 5.0);
-        this.key_triggered_button("Slow down time", ["t"], () => this.time_scale /= 5.0);
+        this.key_triggered_button("Speed up time", ["y"], () => this.time_scale *= 5.0);
+        this.key_triggered_button("Slow down time", ["u"], () => this.time_scale /= 5.0);
         this.new_line();
         this.live_string(box => {
             box.textContent = "Time scale: " + this.time_scale
@@ -149,95 +149,31 @@ export class Simulation extends Scene {
         });
         this.new_line();
 
-        this.key_triggered_button("Change Light Color", ["l"], () =>{
+        this.key_triggered_button("Change Light Color", ["h"], () =>{
             this.r = Math.random();
             this.g = Math.random();
             this.b = Math.random();
         });
         this.new_line();
-        this.key_triggered_button("Original Light Color", ['o'], () => {
+        this.key_triggered_button("Original Light Color", ['j'], () => {
             this.r = 0.917;
             this.g = 0.792;
             this.b = 0.949;
         })
 
-        this.key_triggered_button("Change Light Position", ["a"], () =>{
+        this.new_line();
+        this.key_triggered_button("Change Light Position", ["n"], () =>{
             this.x = ((Math.random() * 100) % 60) - 20;
             this.y = ((Math.random() * 100) % 40) - 10;
             this.z = ((Math.random() * 100) % 3) + 2;
         });
         this.new_line();
-        this.key_triggered_button("Original Light Position", ['b'], () => {
+        this.key_triggered_button("Original Light Position", ['m'], () => {
             this.x = 36;
             this.y = 21;
             this.z = 0;
         })
 
-    }
-
-    texture_buffer_init(gl) {
-        // Depth Texture
-        this.lightDepthTexture = gl.createTexture();
-        // Bind it to TinyGraphics
-        this.light_depth_texture = new Buffered_Texture(this.lightDepthTexture);
-        //this.stars.light_depth_texture = this.light_depth_texture
-        this.floor.light_depth_texture = this.light_depth_texture
-
-        this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
-        gl.bindTexture(gl.TEXTURE_2D, this.lightDepthTexture);
-        gl.texImage2D(
-            gl.TEXTURE_2D,      // target
-            0,                  // mip level
-            gl.DEPTH_COMPONENT, // internal format
-            this.lightDepthTextureSize,   // width
-            this.lightDepthTextureSize,   // height
-            0,                  // border
-            gl.DEPTH_COMPONENT, // format
-            gl.UNSIGNED_INT,    // type
-            null);              // data
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-        // Depth Texture Buffer
-        this.lightDepthFramebuffer = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
-        gl.framebufferTexture2D(
-            gl.FRAMEBUFFER,       // target
-            gl.DEPTH_ATTACHMENT,  // attachment point
-            gl.TEXTURE_2D,        // texture target
-            this.lightDepthTexture,         // texture
-            0);                   // mip level
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        // create a color texture of the same size as the depth texture
-        // see article why this is needed_
-        this.unusedTexture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.unusedTexture);
-        gl.texImage2D(
-            gl.TEXTURE_2D,
-            0,
-            gl.RGBA,
-            this.lightDepthTextureSize,
-            this.lightDepthTextureSize,
-            0,
-            gl.RGBA,
-            gl.UNSIGNED_BYTE,
-            null,
-        );
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        // attach it to the framebuffer
-        gl.framebufferTexture2D(
-            gl.FRAMEBUFFER,        // target
-            gl.COLOR_ATTACHMENT0,  // attachment point
-            gl.TEXTURE_2D,         // texture target
-            this.unusedTexture,         // texture
-            0);                    // mip level
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 
     display(context, program_state) {
@@ -300,21 +236,10 @@ export class Group extends Simulation {
                 {ambient:1, color: hex_color("#ffffff")}),
             background_objects: new Material(new defs.Phong_Shader(),
                 {ambient:0.2, diffusivity: 0.5, specularity:0.5, color: hex_color("#ffffff")}),
-            shadow_temp: new Material(new Shadow_Textured_Phong_Shader(1), {
-                color: color(1,1,1,1),
-                ambient: 0.4,
-                diffusivity: 0.4,
-                specularity: 0.4,
-            })
-
-        }
-
-        // For the floor or other plain objects
-        this.floor = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(1, 1, 1, 1), ambient: .3, diffusivity: 0.6, specularity: 0.4, smoothness: 64,
-            color_texture: 0.8,
-            light_depth_texture: 0.8,
-        })
+            temp: new Material( new Textured_Phong(),
+                {color: hex_color("#000000"),
+                ambient: 0.5, diffusivity: 0.1}),
+            }
 
         this.colliders = [
             {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
@@ -327,11 +252,25 @@ export class Group extends Simulation {
         this.opm = new Body(this.shapes.opm, this.materials.opm, vec3(5,5,5), false)
             .emplace(opm_scale.times(opm_rot).times(Mat4.identity()),
                 0, 0);
+
+        let pillar_scale = Mat4.scale(10, 100, 10);
+        let pillar_translation = Mat4.translation(-2, 0, -1);
+        let pillar_rotation = Mat4.rotation(55, 1, 0, 0);
+        this.pillars = new Body(this.shapes.pillar, this.materials.background_objects, vec3(10,10,10), false)
+            .emplace(pillar_scale.times(pillar_translation).times(pillar_rotation).times(Mat4.identity()),
+                0,0);
+
+        //let model_transform_cylinder = model_transform.times(Mat4.translation(-21,10,-20)).times(Mat4.scale(10, 100, 10)).times(Mat4.rotation(55, 1,0,0));
+
         this.initial_camera_location = Mat4.look_at(vec3(0, 0, 20), vec3(0, 0, 0), vec3(0, 1, 0));
         this.animation_queue = [];
+
+        //Color of the light source
         this.r = 0.917;
         this.g = 0.792;
         this.b = 0.949;
+
+        //XYZ coordinates of the light source
         this.x = 36;
         this.y = 21;
         this.z = 0;
@@ -389,7 +328,11 @@ export class Group extends Simulation {
             // Pass the two bodies and the collision shape to check_if_colliding():
             if (a.check_if_colliding(this.opm, collider)) {
                 a.hit = true;
-                a.linear_velocity = a.linear_velocity.times(-.45);
+                a.linear_velocity = a.linear_velocity.times(-0.45);
+            }
+            else if (a.check_if_colliding(this.pillars, collider)) {
+                a.hit = true;
+                a.linear_velocity = a.linear_velocity.times(-3);
             }
         }
         this.bodies = this.bodies.filter(b => b.center[0] > -50 && b.center[1] > -50);
@@ -398,7 +341,6 @@ export class Group extends Simulation {
     display(context, program_state) {
         super.display(context, program_state);
         const gl = context.context;
-        this.texture_buffer_init(gl);
 
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
@@ -443,20 +385,17 @@ export class Group extends Simulation {
         const sun_radius = 5;
         const light_size = 10**sun_radius;
 
-        // TODO: shadows?
-
-        // Added the ability to change the sun's color to two different colors: yellow and purple
-
-        //this is the color purple
+        // Added the ability to change the sun's color into a randomized color
         let sun_color = color(this.r, this.g, this.b, 1);
         if (Math.floor(ts) % 2 === 0) {
             //sun_color = color(0.882, 0.666, 0.933,1);
             sun_color = color(this.r+0.1, this.g+0.1, this.b+0.1, 1);
         }
 
-
         //program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
 
+
+        //Added the ability to
         program_state.lights = [new Light(light_position, sun_color, light_size)];
 
         let model_transform = Mat4.identity();
@@ -473,22 +412,8 @@ export class Group extends Simulation {
 
         //This part adds the cylinder background
         let model_transform_cylinder = model_transform.times(Mat4.translation(-21,10,-20)).times(Mat4.scale(10, 100, 10)).times(Mat4.rotation(55, 1,0,0));
-        this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.materials.background_objects);
-        //this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.floor);
-
-        // This section adds in the shadows
-
-        // Step 1: set the perspective and camera to the POV of light
-
-        // Bind the Depth Texture Buffer
-
-        // Prepare uniforms
-
-        // Step 2: unbind, draw to the canvas
-
-        // Step 3: display the textures
-
-
+        //this.shapes.pillar.draw(context, program_state, model_transform_cylinder, this.materials.background_objects);
+        this.pillars.shape.draw(context, program_state, this.pillars.drawn_location, this.materials.background_objects);
 
         // set up camera
         if (this.attached) {
