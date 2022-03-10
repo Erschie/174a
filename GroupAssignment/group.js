@@ -332,7 +332,7 @@ export class Group extends Simulation {
             }
             else if (a.check_if_colliding(this.pillars, collider)) {
                 a.hit = true;
-                a.linear_velocity = a.linear_velocity.times(-3);
+                a.linear_velocity = a.linear_velocity.times(-0.1);
             }
         }
         this.bodies = this.bodies.filter(b => b.center[0] > -50 && b.center[1] > -50);
