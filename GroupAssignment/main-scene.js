@@ -9,6 +9,7 @@ import {Text_Demo} from "./examples/text-demo.js"
 import {Transforms_Sandbox} from "./examples/transforms-sandbox.js"
 import {Group} from "./group.js";
 import {Shadow_Demo} from "./examples/shadow-demo.js";
+import {Mouse_Demo} from "./examples/mouse-demo.js";
 
 // Pull these names into this module's scope for convenience:
 const {
@@ -36,7 +37,8 @@ Object.assign(defs,
     {Text_Demo},
     {Transforms_Sandbox},
     {Group},
-    {Shadow_Demo}
+    {Shadow_Demo},
+    {Mouse_Demo},
 );
 
 // ******************** End extra step

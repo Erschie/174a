@@ -13,9 +13,10 @@ export class Body {
     // **Body** can store and update the properties of a 3D body that incrementally
     // moves from its previous place due to velocities.  It conforms to the
     // approach outlined in the "Fix Your Timestep!" blog post by Glenn Fiedler.
-    constructor(shape, material, size) {
+    constructor(shape, material, size, user_projectile) {
         Object.assign(this,
-            {shape, material, size})
+            {shape, material, size, user_projectile})
+        this.hit = false;
     }
 
     // (within some margin of distance).
@@ -79,7 +80,7 @@ export class Body {
             return false;
         // Nothing collides with itself.
         // Convert sphere b to the frame where a is a unit sphere:
-        const T = this.inverse.times(b.drawn_location.times(Mat4.scale(0.8,1.5,0.8)), this.temp_matrix);
+        const T = this.inverse.times(b.drawn_location.times(Mat4.scale(1,1.5,1)), this.temp_matrix);
 
         const {intersect_test, points, leeway} = collider;
         // For each vertex in that b, shift to the coordinate frame of
@@ -317,16 +318,17 @@ export class Group extends Simulation {
 
         this.colliders = [
             {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(1), leeway: 1},
-            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(4), leeway: 0.3},
+            {intersect_test: Body.intersect_sphere, points: new defs.Subdivision_Sphere(4), leeway: 2},
             {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: .1}
         ];
         this.collider_selection = 1;
         let opm_scale = Mat4.scale(15,15,15);
         let opm_rot = Mat4.rotation(0.5, 0,1,0);
-        this.opm = new Body(this.shapes.opm, this.materials.opm, vec3(5,5,5))
+        this.opm = new Body(this.shapes.opm, this.materials.opm, vec3(5,5,5), false)
             .emplace(opm_scale.times(opm_rot).times(Mat4.identity()),
                 0, 0);
         this.initial_camera_location = Mat4.look_at(vec3(0, 0, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.animation_queue = [];
         this.r = 0.917;
         this.g = 0.792;
         this.b = 0.949;
@@ -356,7 +358,7 @@ export class Group extends Simulation {
         // Generate additional moving bodies if there ever aren't enough:
         this.counter++;
         if (Math.floor(this.counter % 8) === 0) {
-            this.bodies.push(new Body(this.random_shape(), this.materials.rock, vec3(1, 1 + Math.random(), 1))
+            this.bodies.push(new Body(this.random_shape(), this.materials.rock, vec3(1, 1 + Math.random(), 1), false)
                 .emplace(Mat4.translation(...vec3(50, 25, 0).randomized(12)),
                     vec3(0, -1, 0).randomized(2).normalized().times(2), Math.random()));
         }
@@ -367,38 +369,30 @@ export class Group extends Simulation {
             a.inverse = Mat4.inverse(a.drawn_location);
 
             //a.linear_velocity = a.linear_velocity.minus(a.center.times(dt));
-            a.linear_velocity[0] += dt * -9.8;
-            if (a.linear_velocity[0] > 0)
+            if (a.hit) {
+                a.linear_velocity[0] *= 0.95;
+                a.linear_velocity[1] += dt * -9.8;
+                a.linear_velocity[2] *= 0.95;
                 continue;
+            }
+            if (a.user_projectile) {
+                a.linear_velocity[1] += dt * -4.9;
+            } else {
+                a.linear_velocity[0] += dt * -9.8;
+            }
+
+            /*if (a.linear_velocity[0] > 0)
+                continue;*/
             // *** Collision process is here ***
             // Loop through all bodies again (call each "b"):
 
             // Pass the two bodies and the collision shape to check_if_colliding():
-            if (!a.check_if_colliding(this.opm, collider))
-                continue;
-            // If we get here, we collided, so turn red and zero out the
-            // velocity so they don't inter-penetrate any further.
-            //a.material = this.active_color;
-            if (a.center[2] < 0) {
-                a.linear_velocity[0] *= -.45;
-                a.linear_velocity[2] = (Math.random() + 0.5) * -2.5;
-            } else {
-                a.linear_velocity[0] *= -.45;
-                a.linear_velocity[2] = (Math.random() + 0.5) * 2.5;
+            if (a.check_if_colliding(this.opm, collider)) {
+                a.hit = true;
+                a.linear_velocity = a.linear_velocity.times(-.45);
             }
-            //a.angular_velocity = 0;
         }
-
-        /*for (let b of this.bodies) {
-            // Gravity on Earth, where 1 unit in world space = 1 meter:
-            b.linear_velocity[0] += dt * -9.8;
-            // If about to fall through floor, reverse y velocity:
-            if (b.center[0] < 1 && b.linear_velocity[1] < 0)
-                b.linear_velocity[0] *= -.8;
-        }*/
-        // Delete bodies that stop or stray too far away:
-        //this.bodies = this.bodies.filter(b => b.center.norm() < 50 && b.linear_velocity.norm() > 2);
-        this.bodies = this.bodies.filter(b => b.center[0] > -50);
+        this.bodies = this.bodies.filter(b => b.center[0] > -50 && b.center[1] > -50);
     }
 
     display(context, program_state) {
@@ -409,6 +403,30 @@ export class Group extends Simulation {
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             program_state.set_camera(Mat4.translation(0, -15, -40));
+
+            let canvas = context.canvas;
+            const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
+                vec((e.clientX - (rect.left + rect.right) / 2) / ((rect.right - rect.left) / 2),
+                    (e.clientY - (rect.bottom + rect.top) / 2) / ((rect.top - rect.bottom) / 2));
+
+            canvas.addEventListener("mousedown", e => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect()
+                console.log("e.clientX: " + e.clientX);
+                console.log("e.clientX - rect.left: " + (e.clientX - rect.left));
+                console.log("e.clientY: " + e.clientY);
+                console.log("e.clientY - rect.top: " + (e.clientY - rect.top));
+                console.log("mouse_position(e): " + mouse_position(e));
+                let center_ndc_near = vec4(0.0, 0.0, -1.0, 1.0);
+                let P = program_state.projection_transform;
+                let V = program_state.camera_inverse;
+                let center_world_near  = Mat4.inverse(P.times(V)).times(center_ndc_near);
+                center_world_near.scale_by(1 / center_world_near[3]);
+                let loc_matrix = Mat4.translation(center_world_near[0], center_world_near[1], center_world_near[2]);
+                this.bodies.push(new Body(this.random_shape(), this.materials.rock, vec3(2, 2 + Math.random(), 2), true)
+                    .emplace(loc_matrix,
+                        vec3(mouse_position(e)[0], Math.max(0,mouse_position(e)[1]), -1).times(25), Math.random()));
+            });
         }
 
         program_state.projection_transform = Mat4.perspective(
@@ -469,6 +487,7 @@ export class Group extends Simulation {
         // Step 2: unbind, draw to the canvas
 
         // Step 3: display the textures
+
 
 
         // set up camera
